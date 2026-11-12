@@ -1,0 +1,448 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spin to fun</title>
+
+<style>
+* { box-sizing:border-box; }
+
+body {
+  margin:0;
+  min-height:100vh;
+  font-family:Arial,sans-serif;
+  color:white;
+  text-align:center;
+  background:
+    radial-gradient(circle at top,#342078,#100b2d 65%,#08051b);
+  padding:25px 12px 40px;
+}
+
+h1 {
+  font-size:32px;
+  margin:8px 0;
+  font-weight:900;
+  background:linear-gradient(90deg,#fff,#ffd76a,#ff79c8);
+  -webkit-background-clip:text;
+  color:transparent;
+}
+
+.subtitle {
+  color:#c9bdf4;
+  margin-bottom:25px;
+}
+
+.game {
+  max-width:500px;
+  margin:auto;
+  padding:20px 12px 25px;
+  border:1px solid #ffffff30;
+  border-radius:25px;
+  background:#ffffff0d;
+  box-shadow:0 15px 50px #0008;
+}
+
+.wheel-box {
+  position:relative;
+  width:min(88vw,390px);
+  aspect-ratio:1;
+  margin:10px auto 25px;
+  filter:drop-shadow(0 10px 18px #0009);
+}
+
+canvas {
+  width:100%;
+  height:100%;
+  display:block;
+}
+
+.pointer {
+  position:absolute;
+  top:-10px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:3;
+  width:0;
+  height:0;
+  border-left:19px solid transparent;
+  border-right:19px solid transparent;
+  border-top:45px solid #fff;
+  filter:drop-shadow(0 4px 4px #0009);
+}
+
+.center-logo {
+  position:absolute;
+  width:76px;
+  height:76px;
+  border-radius:50%;
+  background:linear-gradient(145deg,#fff3b0,#ff9d00);
+  border:6px solid white;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:30px;
+  box-shadow:0 0 20px #ffb700;
+  z-index:2;
+}
+
+button {
+  border:0;
+  border-radius:50px;
+  padding:16px 38px;
+  font-size:18px;
+  font-weight:900;
+  color:#29104d;
+  background:linear-gradient(135deg,#ffe66d,#ff9d00);
+  box-shadow:0 7px 0 #a95700,0 10px 25px #ffad0040;
+  cursor:pointer;
+  transition:.15s;
+}
+
+button:active {
+  transform:translateY(4px);
+  box-shadow:0 3px 0 #a95700;
+}
+
+button:disabled {
+  opacity:.6;
+}
+
+.hint {
+  color:#c9bdf4;
+  font-size:13px;
+  margin-top:20px;
+}
+
+.result {
+  display:none;
+  margin:25px auto 0;
+  padding:22px 12px;
+  border-radius:20px;
+  background:linear-gradient(135deg,#6b32b8,#25135a);
+  border:1px solid #ffffff55;
+  animation:pop .5s ease;
+}
+
+.result h2 {
+  color:#ffe66d;
+  margin:0 0 10px;
+}
+
+.winner {
+  font-size:35px;
+  font-weight:900;
+  color:white;
+  overflow-wrap:anywhere;
+}
+
+.gif {
+  width:100%;
+  max-width:400px;
+  height:300px;
+  object-fit:contain;
+  border-radius:20px;
+  margin-top:20px;
+  display:none;
+}
+}
+
+@keyframes pop {
+  0% { transform:scale(.5); opacity:0; }
+  100% { transform:scale(1); opacity:1; }
+}
+
+@keyframes glow {
+  0%,100% { box-shadow:0 0 10px #ffcf33; }
+  50% { box-shadow:0 0 35px #ffcf33; }
+}
+
+.center-logo {
+  animation:glow 2s infinite;
+}
+
+.footer {
+  margin-top:25px;
+  font-size:12px;
+  color:#9e91ca;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🎡 LUCKY SPIN</h1>
+<div class="subtitle">Spin the wheel. Test your luck!</div>
+
+<div class="game">
+
+  <div class="wheel-box">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="800" height="800"></canvas>
+    <div class="center-logo">★</div>
+  </div>
+
+  <button id="spinBtn" onclick="spinWheel()">
+    🎯 SPIN NOW
+  </button>
+
+  <div class="hint">Good luck! Where will the wheel stop?</div>
+
+  <div class="result" id="result">
+    <h2>🎉 CONGRATULATIONS! 🎉</h2>
+    <div class="winner" id="winner">WINNER</div>
+    <img
+      class="gif"
+      id="resultGif"
+      src="https://media.giphy.com/media/26tOZ42Mg6pbTUPHW/giphy.gif"
+      alt="Celebration animation"
+    >
+    <p>You are today's lucky winner!</p>
+    <button onclick="resetGame()">SPIN AGAIN</button>
+  </div>
+
+</div>
+
+<div class="footer">LUCKY SPIN • Made for fun ❤️</div>
+
+<script>
+
+// ==================================
+// EDIT YOUR WHEEL OPTIONS HERE
+// ==================================
+
+
+const options = [
+  "strip 👙",
+  "face fuck 👄",
+  "fingering 🫣",
+  "fuck pussy🫰",
+  "Pussy licking 👅",
+  "cum in mouth 🤤"
+];
+
+// Each result has its own GIF
+const resultGifs = [
+  "gif/1.gif",
+  "gif/2.gif",
+  "gif/3.gif",
+  "gif/4.gif",
+  "gif/5.gif",
+  "gif/6.gif"
+];
+
+
+const colors = [
+  "#ff3864",
+  "#7b35d5",
+  "#00b8a9",
+  "#ff9f1c",
+  "#2878ff",
+  "#e84393",
+  "#15a66b",
+  "#b43ad8"
+];
+
+// ==================================
+// DRAW THE WHEEL
+// ==================================
+
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+
+const cx = 400;
+const cy = 400;
+const radius = 375;
+
+let rotation = 0;
+let spinning = false;
+
+function drawWheel() {
+  const slice = Math.PI * 2 / options.length;
+
+  ctx.clearRect(0,0,800,800);
+
+  options.forEach((option,i) => {
+    const start = rotation + i * slice;
+    const end = start + slice;
+
+    // Wheel segment
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,radius,start,end);
+    ctx.closePath();
+
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fill();
+
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 5;
+    ctx.stroke();
+
+    // Segment text
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(start + slice / 2);
+
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 27px Arial";
+    ctx.shadowColor = "#00000080";
+    ctx.shadowBlur = 5;
+
+    ctx.fillText(option, radius - 30, 0);
+
+    ctx.restore();
+  });
+
+  // Outer gold ring
+  ctx.beginPath();
+  ctx.arc(cx,cy,radius,0,Math.PI*2);
+  ctx.strokeStyle="#ffd76a";
+  ctx.lineWidth=16;
+  ctx.stroke();
+}
+
+drawWheel();
+
+// ==================================
+// SOUND EFFECT
+// ==================================
+
+let audioContext;
+
+function playSound() {
+  try {
+    audioContext = audioContext || new
+      (window.AudioContext || window.webkitAudioContext)();
+
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+
+    oscillator.type = "sine";
+    oscillator.frequency.value = 600;
+
+    gain.gain.setValueAtTime(.12,audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(
+      .001,audioContext.currentTime + .12
+    );
+
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + .12);
+  } catch(e) {}
+}
+
+// ==================================
+// SPIN FUNCTION
+// ==================================
+
+function spinWheel() {
+  if(spinning) return;
+
+  spinning = true;
+
+  document.getElementById("spinBtn").disabled = true;
+  document.getElementById("result").style.display = "none";
+  document.getElementById("resultGif").style.display = "none";
+
+  const slice = Math.PI * 2 / options.length;
+
+  // Random winning segment
+  const winnerIndex = Math.floor(Math.random()*options.length);
+
+  // Pointer is at the top
+  const pointerAngle = -Math.PI/2;
+
+  // Rotate until the selected segment reaches pointer
+  const targetAngle =
+    pointerAngle -
+    (winnerIndex * slice + slice/2);
+
+  const current = rotation % (Math.PI*2);
+
+  let difference =
+    ((targetAngle-current) % (Math.PI*2) +
+      Math.PI*2) % (Math.PI*2);
+
+  // Add several full rotations
+  const totalRotation =
+    rotation + Math.PI*2*6 + difference;
+
+  const startRotation = rotation;
+  const distance = totalRotation - startRotation;
+
+  const duration = 5500;
+  const startTime = performance.now();
+
+  function animate(now) {
+    let progress = Math.min(
+      (now-startTime)/duration,1
+    );
+
+    // Smooth slow-down effect
+    let ease = 1-Math.pow(1-progress,5);
+
+    rotation = startRotation + distance*ease;
+
+    drawWheel();
+
+    if(Math.random() < .25) playSound();
+
+    if(progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      rotation = totalRotation;
+      drawWheel();
+      showWinner(winnerIndex);
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+// ==================================
+// SHOW WINNER
+// ==================================
+
+
+function showWinner(index) {
+  spinning = false;
+
+  document.getElementById("winner").textContent =
+    options[index];
+
+  document.getElementById("result").style.display = "block";
+
+  const gif = document.getElementById("resultGif");
+
+  // Load the GIF matching the winning result
+  gif.style.display = "block";
+  gif.src = resultGifs[index] + "?t=" + Date.now();
+
+  document.getElementById("spinBtn").disabled = false;
+
+  playSound();
+}
+
+
+// ==================================
+// PLAY AGAIN
+// ==================================
+
+function resetGame() {
+  document.getElementById("result").style.display = "none";
+  document.getElementById("resultGif").style.display = "none";
+}
+
+</script>
+
+</body>
+</html>
